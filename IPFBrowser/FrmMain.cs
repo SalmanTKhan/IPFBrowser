@@ -24,10 +24,13 @@ using System.Drawing;
 using System.Drawing.Text;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace IPFBrowser
 {
@@ -39,6 +42,10 @@ namespace IPFBrowser
 		private Dictionary<string, IpfFile> _files = new Dictionary<string, IpfFile>();
 
 		private Dictionary<string, FileFormat> _fileTypes = new Dictionary<string, FileFormat>();
+
+        private IpfFile openIpfFile;
+		private bool openTextFile;
+        private IesFile openIesFile;		
 
 		/// <summary>
 		/// Initializes form.
@@ -80,9 +87,10 @@ namespace IPFBrowser
 			LblPreview.Dock = DockStyle.Fill;
 			GridPreview.Dock = DockStyle.Fill;
 
-			// Disable extract buttons by default
+			// Disable extract / save buttons by default
 			BtnExtractPack.Enabled = false;
-			BtnExtractFile.Enabled = false;
+            BtnExtractFile.Enabled = false;
+            BtnSavePack.Enabled = false;
 
 			// Hide empty lists
 			SplMain.Visible = false;
@@ -183,10 +191,14 @@ namespace IPFBrowser
 						foreach (var iesColumn in iesFile.Columns)
 							row.Cells[i++].Value = iesRow[iesColumn.Name];
 
+						row.Tag = iesRow.ClassName;
+
 						GridPreview.Rows.Add(row);
 					}
 
 					GridPreview.ResumeDrawing();
+
+					openIesFile = iesFile;
 
 					GridPreview.Visible = true;
 				});
@@ -244,7 +256,8 @@ namespace IPFBrowser
 
 			// Show lists and enabled pack extract button
 			BtnExtractPack.Enabled = true;
-			SplMain.Visible = true;
+            BtnSavePack.Enabled = true;
+            SplMain.Visible = true;
 		}
 
 		/// <summary>
@@ -313,23 +326,25 @@ namespace IPFBrowser
 				return;
 			}
 
-			BtnExtractFile.Enabled = true;
+            BtnExtractFile.Enabled = true;
 
 			if (BtnPreview.Checked)
 				Preview();
 		}
 
-		/// <summary>
-		/// Called when selected a node in the tree view,
-		/// lists files in node's folder in file list.
-		/// </summary>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void TreeFolders_AfterSelect(object sender, TreeViewEventArgs e)
+
+        /// <summary>
+        /// Called when selected a node in the tree view,
+        /// lists files in node's folder in file list.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void TreeFolders_AfterSelect(object sender, TreeViewEventArgs e)
 		{
 			var path = e.Node.FullPath.Replace('\\', '/') + '/';
 
-			LstFiles.BeginUpdate();
+            ResetPreview();
+            LstFiles.BeginUpdate();
 			LstFiles.Items.Clear();
 
 			List<string> paths;
@@ -342,7 +357,10 @@ namespace IPFBrowser
 
 					var lvi = LstFiles.Items.Add(fileName);
 					//lvi.SubItems.Add("0 Byte");
-					lvi.Tag = filePath;
+					
+                    lvi.Tag = filePath;
+                    if (_files.TryGetValue(filePath, out var ipfFile) && ipfFile.isModified)
+						lvi.ForeColor = Color.Blue;
 
 					FileFormat fileType;
 					if (_fileTypes.TryGetValue(ext, out fileType))
@@ -367,6 +385,8 @@ namespace IPFBrowser
 			var fileName = (string)selected.Tag;
 			var ipfFile = _files[fileName];
 			var ext = Path.GetExtension(fileName).ToLowerInvariant();
+			
+			openIpfFile = ipfFile;
 
 			var previewType = PreviewType.None;
 			var lexer = Lexer.Null;
@@ -392,11 +412,10 @@ namespace IPFBrowser
 
 							Invoke((MethodInvoker)delegate
 							{
-								TxtPreview.ReadOnly = false;
 								TxtPreview.Text = text;
-								TxtPreview.ReadOnly = true;
 								TxtPreview.Visible = true;
 							});
+							openTextFile = true;
 							break;
 
 						case PreviewType.Image:
@@ -405,7 +424,7 @@ namespace IPFBrowser
 							Invoke((MethodInvoker)delegate
 							{
 								using (var ms = new MemoryStream(imgData))
-									ImgPreview.Image = Image.FromStream(ms);
+									ImgPreview.Image = System.Drawing.Image.FromStream(ms);
 								ImgPreview.Size = ImgPreview.Image.Size;
 								PnlImagePreview.Visible = true;
 							});
@@ -473,6 +492,8 @@ namespace IPFBrowser
 								foreach (var iesColumn in iesFile.Columns)
 									GridPreview.Columns.Add(iesColumn.Name, iesColumn.Name);
 
+								int index = 0;
+
 								foreach (var iesRow in iesFile.Rows)
 								{
 									var row = new DataGridViewRow();
@@ -482,10 +503,14 @@ namespace IPFBrowser
 									foreach (var iesColumn in iesFile.Columns)
 										row.Cells[i++].Value = iesRow[iesColumn.Name];
 
-									GridPreview.Rows.Add(row);
+									row.Tag = "" + index++;
+
+                                    GridPreview.Rows.Add(row);
 								}
 
 								GridPreview.ResumeDrawing();
+
+								openIesFile = iesFile;
 
 								GridPreview.Visible = true;
 							});
@@ -578,7 +603,7 @@ namespace IPFBrowser
 		private void BtnExit_Click(object sender, EventArgs e)
 		{
 			Close();
-		}
+        }
 
 		/// <summary>
 		/// Sets lexer and styles for text preview.
@@ -669,7 +694,12 @@ namespace IPFBrowser
 		/// </summary>
 		private void ResetPreview()
 		{
-			TxtPreview.Visible = false;
+            if (openIpfFile != null && openIpfFile.isModified)
+				SaveIpfFile();
+
+			openTextFile = false;
+			openIesFile = null;
+            TxtPreview.Visible = false;
 			TxtPreview.Text = "";
 
 			PnlImagePreview.Visible = false;
@@ -735,17 +765,18 @@ namespace IPFBrowser
 			File.WriteAllBytes(filePath, file);
 		}
 
-		/// <summary>
-		/// Called when clicking Extract Client button, extracts selected
-		/// TOS client to selected destination.
-		/// </summary>
-		/// <remarks>
-		/// Loads data first, followed by patch, to get the latest version
-		/// of all files found.
-		/// </remarks>
-		/// <param name="sender"></param>
-		/// <param name="e"></param>
-		private void BtnExtractClient_Click(object sender, EventArgs e)
+
+        /// <summary>
+        /// Called when clicking Extract Client button, extracts selected
+        /// TOS client to selected destination.
+        /// </summary>
+        /// <remarks>
+        /// Loads data first, followed by patch, to get the latest version
+        /// of all files found.
+        /// </remarks>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnExtractClient_Click(object sender, EventArgs e)
 		{
 			FbdExtractPack.Description = "Select TOS folder.";
 			FbdExtractPack.ShowNewFolderButton = false;
@@ -870,6 +901,234 @@ namespace IPFBrowser
 			// Show progress window after the thread was started, as it
 			// blocks the main window.
 			frmProgress.ShowDialog();
+		}
+
+        /// <summary>
+        /// Value changed for Text Preview
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void TxtPreview_TextChanged(object sender, System.EventArgs e)
+        {
+			if (openTextFile) { 
+				openIpfFile.isModified = true;
+				LstFiles.SelectedItems[0].ForeColor = Color.Blue;
+            }
+        }
+
+
+        /// <summary>
+        /// Value changed for Grid Preview
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void GridPreview_ValueChanged(object sender, DataGridViewCellEventArgs e)
+        {
+			if (openIesFile == null)
+				return;
+			var newValue = (string)GridPreview[e.ColumnIndex, e.RowIndex].Value;
+			if (e.RowIndex >= openIesFile.Rows.Count)
+				GridPreview_AddRow();
+            var editedRow = openIesFile.Rows[e.RowIndex];
+			var editedCol = openIesFile.Columns[e.ColumnIndex];
+			if (editedCol.IsNumber)
+			{
+				var newFloat = 0f;
+				if (float.TryParse(newValue, out newFloat))
+				{
+                    editedRow[editedCol.Name] = float.Parse(newValue);
+                }
+				else
+				{
+					MessageBox.Show("Value must be numeric");
+					GridPreview[e.ColumnIndex, e.RowIndex].Value = editedRow[editedCol.Name].ToString();
+                }
+			}
+			else
+			{
+                editedRow[editedCol.Name] = newValue;
+            }
+
+            openIpfFile.isModified = true;
+			LstFiles.SelectedItems[0].ForeColor = Color.Blue;
+        }
+
+
+        /// <summary>
+        /// Added a row in Grid Preview
+        /// </summary>
+        private void GridPreview_AddRow()
+        {
+			var newRow = new IesRow();
+			newRow.ClassId = openIesFile.Rows[openIesFile.Rows.Count - 1].ClassId + 1;
+			newRow.ClassName = "ClassName" + newRow.ClassId;
+
+			MessageBox.Show(newRow.ClassId + "" + newRow.ClassName);
+
+            openIesFile.Rows.Add(newRow);
+
+            openIpfFile.isModified = true;
+            LstFiles.SelectedItems[0].ForeColor = Color.Blue;
+        }
+
+
+        /// <summary>
+        /// Deleted a row in Grid Preview
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void GridPreview_DeleteRow(object sender, DataGridViewRowEventArgs e)
+        {
+            if (openIesFile == null)
+                return;
+
+			int deletedIndex = int.Parse((string)e.Row.Tag);
+
+			openIesFile.Rows.RemoveAt(deletedIndex);
+
+            openIpfFile.isModified = true;
+            LstFiles.SelectedItems[0].ForeColor = Color.Blue;
+        }
+
+
+        /// <summary>
+        /// Saves changes to an IPF file
+        /// </summary>
+        private void SaveIpfFile()
+		{
+			if (openIesFile != null)
+            {
+				openIpfFile.content = openIesFile.ToBytes();
+                return;
+			}
+
+			if (openTextFile)
+			{			
+				int byteCount = Encoding.UTF8.GetByteCount(TxtPreview.Text.ToCharArray(), 0, TxtPreview.TextLength);
+				openIpfFile.content = new byte[byteCount];
+				Encoding.UTF8.GetEncoder().GetBytes(TxtPreview.Text.ToCharArray(), 0, TxtPreview.TextLength, openIpfFile.content, 0, true);
+            }
+        }
+
+
+        /// <summary>
+        /// Key Pressed on LstFiles window, used for deleting files
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void LstFiles_KeyDown(object sender, KeyEventArgs e)
+        {
+			if (e.KeyCode == Keys.Delete)
+			{
+                if (LstFiles.SelectedIndices.Count == 0)
+                    return;
+
+                var selected = LstFiles.SelectedItems[0];
+                var fileName = (string)selected.Tag;
+				_files.Remove(fileName);
+
+                var folderPath = TreeFolders.SelectedNode.FullPath.Replace('\\', '/') + '/';
+
+				if (_folders.TryGetValue(folderPath, out var paths))
+				{
+					paths.Remove(fileName);
+				}
+
+				LstFiles.Items.Remove(LstFiles.SelectedItems[0]);
+                openIpfFile = null;
+				ResetPreview();
+            }
+        }
+
+
+        /// <summary>
+        /// Drag Enter method for the LstFiles window
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void LstFiles_DragEnter(object sender, DragEventArgs e)
+        {
+			if (TreeFolders.SelectedNode == null) return;
+
+			if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+				return;
+			
+			e.Effect = DragDropEffects.Copy;
+        }
+
+
+        /// <summary>
+        /// Called when dropping a file in the LstFiles window
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void LstFiles_DropFile(object sender, DragEventArgs e)
+        {
+            if (TreeFolders.SelectedNode == null) 
+				return;
+
+            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+				return;
+
+            string[] files = (string[]) e.Data.GetData(DataFormats.FileDrop);
+			if (files.Length > 1)
+			{
+				MessageBox.Show("Please drop only one file at a time");
+				return;
+			}
+
+			var ext = Path.GetExtension(files[0]);
+            
+			FileFormat fileType;
+            if (!_fileTypes.TryGetValue(ext, out fileType))
+			{
+                MessageBox.Show("Can't add this type of file");
+                return;
+            }
+                
+            var folderPath = TreeFolders.SelectedNode.FullPath.Replace('\\', '/') + '/';
+			var newFilename = folderPath + Path.GetFileName(files[0]);
+
+            IpfFile newFile = new IpfFile(_openedIpf);
+			newFile.isModified = true;
+			newFile.content = File.ReadAllBytes(files[0]);
+
+            if (_folders.TryGetValue(folderPath, out var paths))
+			{
+				paths.Add(newFilename);
+			}
+			_files.Add(newFilename, newFile);
+
+            var lvi = LstFiles.Items.Add(Path.GetFileName(files[0]));
+
+            lvi.Tag = newFilename;
+            lvi.ForeColor = Color.Blue;
+            lvi.ImageKey = fileType.Icon;
+        }
+
+
+        /// <summary>
+        /// Called when clicking Save, shows save dialog and saves the IPF file
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void BtnSave_Click(object sender, EventArgs e)
+        {
+            if (SfdIpfFile.ShowDialog() != DialogResult.OK)
+                return;
+
+            var filePath = SfdIpfFile.FileName;
+            Save(filePath);
+        }
+
+
+		/// <summary>
+		/// Save given IPF file.
+		/// </summary>
+		/// <param name="filePath"></param>
+		private void Save(string filePath)
+		{
+			MessageBox.Show("Saving is not yet implemented");
 		}
 	}
 }

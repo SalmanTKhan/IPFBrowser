@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace IPFBrowser.FileFormats.IPF
 {
@@ -24,16 +25,16 @@ namespace IPFBrowser.FileFormats.IPF
 		private readonly Stream _stream;
 		private readonly BinaryReader _br;
 
-		public string FilePath { get; private set; }
+        public string FilePath { get; private set; }
 		public List<IpfFile> Files { get; private set; }
 		public IpfFooter Footer { get; private set; }
 
 		public Ipf(string filePath)
 		{
 			_stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-			_br = new BinaryReader(_stream);
+            _br = new BinaryReader(_stream);
 
-			this.FilePath = filePath;
+            this.FilePath = filePath;
 			this.Load();
 		}
 
@@ -44,7 +45,7 @@ namespace IPFBrowser.FileFormats.IPF
 
 			if (_br != null)
 				_br.Dispose();
-		}
+        }
 
 		public void Load()
 		{
@@ -78,7 +79,7 @@ namespace IPFBrowser.FileFormats.IPF
 				var path = new string(_br.ReadChars(pathLength));
 				ipfFile.Path = path.Replace("\\", "/");
 				ipfFile.FullPath = Path.Combine(ipfFile.PackFileName, path).Replace("\\", "/");
-
+                
 				this.Files.Add(ipfFile);
 			}
 		}
@@ -109,21 +110,33 @@ namespace IPFBrowser.FileFormats.IPF
 		public uint SizeCompressed { get; set; }
 		public uint SizeUncompressed { get; set; }
 
-		public IpfFile(Ipf ipf)
+		public bool isModified;
+
+		public byte[] content;
+
+        public IpfFile(Ipf ipf)
 		{
 			this.Ipf = ipf;
+			isModified = false;
 		}
-
 		public byte[] GetData()
 		{
-			var ext = System.IO.Path.GetExtension(this.Path);
-			var data = this.Ipf.ReadData(this.Offset, (int)this.SizeCompressed);
-
-			if (_noCompression.Contains(ext.ToLowerInvariant()))
-				return data;
-
-			return this.Decompress(data);
-		}
+			if (isModified)
+			{
+				return content;
+			}
+			else
+			{
+                var ext = System.IO.Path.GetExtension(this.Path);
+                var data = this.Ipf.ReadData(this.Offset, (int)this.SizeCompressed);
+                
+                if (_noCompression.Contains(ext.ToLowerInvariant()))
+                {
+					return data;
+                }
+                return Decompress(data);
+            }
+        }
 
 		private byte[] Decompress(byte[] data)
 		{
