@@ -88,6 +88,7 @@ namespace IPFBrowser
 			GridPreview.Dock = DockStyle.Fill;
 
 			// Disable extract / save buttons by default
+			BtnMenuSave.Enabled = false;
 			BtnExtractPack.Enabled = false;
             BtnExtractFile.Enabled = false;
             BtnSavePack.Enabled = false;
@@ -223,7 +224,6 @@ namespace IPFBrowser
 			try
 			{
 				_openedIpf = new Ipf(filePath);
-				_openedIpf.Load();
 			}
 			catch (IOException)
 			{
@@ -254,8 +254,9 @@ namespace IPFBrowser
 				TreeFolders.SelectedNode.Toggle();
 			}
 
-			// Show lists and enabled pack extract button
-			BtnExtractPack.Enabled = true;
+            // Show lists and enabled pack extract button
+            BtnMenuSave.Enabled = true;
+            BtnExtractPack.Enabled = true;
             BtnSavePack.Enabled = true;
             SplMain.Visible = true;
 		}
@@ -1090,6 +1091,7 @@ namespace IPFBrowser
 			var newFilename = folderPath + Path.GetFileName(files[0]);
 
             IpfFile newFile = new IpfFile(_openedIpf);
+			newFile.FullPath = newFilename;
 			newFile.isModified = true;
 			newFile.content = File.ReadAllBytes(files[0]);
 
@@ -1098,6 +1100,7 @@ namespace IPFBrowser
 				paths.Add(newFilename);
 			}
 			_files.Add(newFilename, newFile);
+            _openedIpf.Files.Add(newFile);
 
             var lvi = LstFiles.Items.Add(Path.GetFileName(files[0]));
 
@@ -1114,21 +1117,19 @@ namespace IPFBrowser
         /// <param name="e"></param>
         private void BtnSave_Click(object sender, EventArgs e)
         {
+            if (openIpfFile != null && openIpfFile.isModified)
+                SaveIpfFile();
+
             if (SfdIpfFile.ShowDialog() != DialogResult.OK)
                 return;
 
             var filePath = SfdIpfFile.FileName;
-            Save(filePath);
+            var reopenRequired = _openedIpf.Save(filePath);
+
+			if (reopenRequired)
+			{
+				Open(filePath);
+            }
         }
-
-
-		/// <summary>
-		/// Save given IPF file.
-		/// </summary>
-		/// <param name="filePath"></param>
-		private void Save(string filePath)
-		{
-			MessageBox.Show("Saving is not yet implemented");
-		}
-	}
+    }
 }

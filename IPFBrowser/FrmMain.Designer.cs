@@ -48,6 +48,7 @@
             this.mainMenu1 = new System.Windows.Forms.MainMenu(this.components);
             this.menuItem1 = new System.Windows.Forms.MenuItem();
             this.BtnMenuOpen = new System.Windows.Forms.MenuItem();
+            this.BtnMenuSave = new System.Windows.Forms.MenuItem();
             this.BtnExit = new System.Windows.Forms.MenuItem();
             this.menuItem3 = new System.Windows.Forms.MenuItem();
             this.BtnAbout = new System.Windows.Forms.MenuItem();
@@ -257,6 +258,7 @@
             this.menuItem1.Index = 0;
             this.menuItem1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
             this.BtnMenuOpen,
+            this.BtnMenuSave,
             this.BtnExit});
             this.menuItem1.Text = "File";
             // 
@@ -266,9 +268,15 @@
             this.BtnMenuOpen.Text = "Open...";
             this.BtnMenuOpen.Click += new System.EventHandler(this.BtnOpen_Click);
             // 
+            // BtnMenuSave
+            // 
+            this.BtnMenuSave.Index = 1;
+            this.BtnMenuSave.Text = "Save As...";
+            this.BtnMenuSave.Click += new System.EventHandler(this.BtnSave_Click);
+            // 
             // BtnExit
             // 
-            this.BtnExit.Index = 1;
+            this.BtnExit.Index = 2;
             this.BtnExit.Text = "Exit";
             this.BtnExit.Click += new System.EventHandler(this.BtnExit_Click);
             // 
@@ -459,6 +467,7 @@
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator2;
 		private System.Windows.Forms.ToolStripButton BtnExtractClient;
 		private System.Windows.Forms.ToolStripButton BtnPreview;
+        private System.Windows.Forms.MenuItem BtnMenuSave;
     }
 }
 
