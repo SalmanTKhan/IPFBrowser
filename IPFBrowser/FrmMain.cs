@@ -379,8 +379,8 @@ namespace IPFBrowser
 		/// </summary>
 		private void Preview()
 		{
-			if (LstFiles.SelectedIndices.Count == 0)
-				return;
+            if (LstFiles.SelectedIndices.Count == 0)
+				return;			
 
 			var selected = LstFiles.SelectedItems[0];
 			var fileName = (string)selected.Tag;
@@ -1022,18 +1022,22 @@ namespace IPFBrowser
                 if (LstFiles.SelectedIndices.Count == 0)
                     return;
 
-                var selected = LstFiles.SelectedItems[0];
-                var fileName = (string)selected.Tag;
-				_files.Remove(fileName);
-
-                var folderPath = TreeFolders.SelectedNode.FullPath.Replace('\\', '/') + '/';
-
-				if (_folders.TryGetValue(folderPath, out var paths))
+				foreach (ListViewItem file in LstFiles.SelectedItems)
 				{
-					paths.Remove(fileName);
+					var fileName = (string)file.Tag;
+					_openedIpf.Files.Remove(_files[fileName]);
+					_files.Remove(fileName);
+
+					var folderPath = TreeFolders.SelectedNode.FullPath.Replace('\\', '/') + '/';
+
+					if (_folders.TryGetValue(folderPath, out var paths))
+					{
+						paths.Remove(fileName);
+					}
+
+					LstFiles.Items.Remove(file);
 				}
 
-				LstFiles.Items.Remove(LstFiles.SelectedItems[0]);
                 openIpfFile = null;
 				ResetPreview();
             }
@@ -1088,16 +1092,39 @@ namespace IPFBrowser
             var folderPath = TreeFolders.SelectedNode.FullPath.Replace('\\', '/') + '/';
 			var newFilename = folderPath + Path.GetFileName(files[0]);
 
+			if (_files.Keys.Contains(newFilename))
+			{
+				var isPreviewedFile = BtnPreview.Checked && openIpfFile != null && _files[newFilename] == openIpfFile;
+
+                if (isPreviewedFile)
+                    ResetPreview();
+
+                _files[newFilename].isModified = true;
+				_files[newFilename].content = File.ReadAllBytes(files[0]);
+				foreach (ListViewItem item in LstFiles.Items)
+				{
+					if ((string)item.Tag == newFilename)
+					{
+						item.ForeColor = Color.Blue;
+					}
+				}
+
+				if (isPreviewedFile)
+					Preview();
+
+                return;
+            }
+
             IpfFile newFile = new IpfFile(_openedIpf);
-			newFile.FullPath = newFilename;
-			newFile.isModified = true;
-			newFile.content = File.ReadAllBytes(files[0]);
+            newFile.FullPath = newFilename;
+            newFile.isModified = true;
+            newFile.content = File.ReadAllBytes(files[0]);
 
             if (_folders.TryGetValue(folderPath, out var paths))
-			{
+            {
 				paths.Add(newFilename);
-			}
-			_files.Add(newFilename, newFile);
+            }
+            _files.Add(newFilename, newFile);
             _openedIpf.Files.Add(newFile);
 
             var lvi = LstFiles.Items.Add(Path.GetFileName(files[0]));

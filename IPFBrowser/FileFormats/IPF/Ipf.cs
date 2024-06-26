@@ -93,6 +93,11 @@ namespace IPFBrowser.FileFormats.IPF
 		{
             var tempPath = Path.GetDirectoryName(filePath) + "\\~" + Path.GetFileName(filePath);
 
+			if (File.Exists(tempPath)) 
+			{
+				File.Delete(tempPath);
+			}
+
             var outputStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
             var bw = new BinaryWriter(outputStream);
 			uint currentPosition = 0;
