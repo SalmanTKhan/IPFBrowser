@@ -196,7 +196,7 @@ namespace IPFBrowser.FileFormats.IPF
 
 	public class IpfFile
 	{
-		private readonly string[] _noCompression = new[] { ".jpg", ".jpeg", ".png", ".fsb", ".mp3" };
+		private readonly string[] _noCompression = new[] { ".jpg", ".jpeg", ".fsb", ".mp3" };
 
 		public Ipf Ipf { get; set; }
 		public string PackFileName { get; set; }
