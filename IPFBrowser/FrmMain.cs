@@ -964,8 +964,6 @@ namespace IPFBrowser
 			newRow.ClassId = openIesFile.Rows[openIesFile.Rows.Count - 1].ClassId + 1;
 			newRow.ClassName = "ClassName" + newRow.ClassId;
 
-			MessageBox.Show(newRow.ClassId + "" + newRow.ClassName);
-
             openIesFile.Rows.Add(newRow);
 
             openIpfFile.isModified = true;
