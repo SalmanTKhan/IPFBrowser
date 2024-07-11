@@ -172,6 +172,7 @@
             this.GridPreview.Name = "GridPreview";
             this.GridPreview.Size = new System.Drawing.Size(240, 150);
             this.GridPreview.TabIndex = 6;
+            this.GridPreview.RowHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.GridPreview_InsertRow);
             this.GridPreview.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.GridPreview_ValueChanged);
             this.GridPreview.UserDeletedRow += new System.Windows.Forms.DataGridViewRowEventHandler(this.GridPreview_DeleteRow);
             // 

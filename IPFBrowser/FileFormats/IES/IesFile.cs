@@ -197,8 +197,26 @@ namespace IPFBrowser.FileFormats.IES
                 var rowsStart = bw.BaseStream.Position;
                 foreach (var row in rows)
                 {
-                    bw.Write(row.ClassId);
-                    bw.WriteXoredLpString(row.ClassName ?? "");
+					// Find the ClassId and ClassName
+					// If these are part of the table, we write these instead of whatever
+					// values we might have here, in case the user changed them
+					if (row.TryGetValue("ClassID", out var classId))
+					{
+                        bw.Write((int)(float)classId);
+                    }
+					else
+					{
+                        bw.Write(row.ClassId);
+                    }
+
+					if (row.TryGetValue("ClassName", out var className))
+					{
+                        bw.WriteXoredLpString((String)className);
+                    }
+					else
+					{
+                        bw.WriteXoredLpString(row.ClassName ?? "");
+                    }
 
                     foreach (var column in sortedColumns)
                     {

@@ -956,6 +956,42 @@ namespace IPFBrowser
 
 
         /// <summary>
+        /// Inserting a row in Grid Preview
+		/// This is done by right clicking the row header above where you want to insert, which is
+		/// not ideal, this can probably be moved to a proper context menu eventually
+        /// </summary>
+        private void GridPreview_InsertRow(object sender, DataGridViewCellMouseEventArgs e)
+        {
+            if (e.Button != MouseButtons.Right)
+				return;
+
+            var afterRow = e.RowIndex;
+			if (afterRow > openIesFile.Rows.Count)
+				return;
+
+            GridPreview.Rows.Insert(afterRow + 1, 1);
+
+			// Some files have auto-generated classnames rather than having them in the file
+			// Need to shift these down to avoid duplicates
+			// For files which contain the Classid / Classname as part of the file these values aren't used.
+			for (int i = afterRow + 1; i < openIesFile.Rows.Count; i++)
+			{
+				openIesFile.Rows[i].ClassId++;
+				openIesFile.Rows[i].ClassName = "ClassName" + openIesFile.Rows[i].ClassId;
+            }
+
+            var newRow = new IesRow();
+            newRow.ClassId = openIesFile.Rows[afterRow].ClassId + 1;
+            newRow.ClassName = "ClassName" + newRow.ClassId;
+
+            openIesFile.Rows.Insert(afterRow + 1, newRow);
+
+            openIpfFile.isModified = true;
+            LstFiles.SelectedItems[0].ForeColor = Color.Blue;
+        }
+
+
+        /// <summary>
         /// Added a row in Grid Preview
         /// </summary>
         private void GridPreview_AddRow()
