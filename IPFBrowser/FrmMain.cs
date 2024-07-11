@@ -1251,5 +1251,70 @@ namespace IPFBrowser
 				Open(filePath);
             }
         }
+
+
+        /// <summary>
+        /// Called when the version label is clicked, lets you change the version
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void LblVersion_Click(object sender, EventArgs e)
+        {
+			string newVersion = "" + _openedIpf.Footer.NewVersion;
+			if (ShowInputDialog("New Version", ref newVersion) == DialogResult.OK)
+			{
+				if (uint.TryParse(newVersion, out var result))
+				{
+					_openedIpf.Footer.NewVersion = result;
+					LblVersion.Text = "Version " + newVersion;
+				}
+				else
+				{
+					MessageBox.Show("Value must be numeric");
+				}
+			}
+        }
+
+
+        private static DialogResult ShowInputDialog(string title, ref string value)
+        {
+            System.Drawing.Size size = new System.Drawing.Size(200, 70);
+            Form inputBox = new Form();
+
+            inputBox.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+            inputBox.ShowInTaskbar = false;
+            inputBox.StartPosition = FormStartPosition.CenterParent;
+            inputBox.ClientSize = size;
+            inputBox.Text = title;
+
+            System.Windows.Forms.TextBox textBox = new TextBox();
+            textBox.Size = new System.Drawing.Size(size.Width - 10, 23);
+            textBox.Location = new System.Drawing.Point(5, 5);
+            textBox.Text = value;
+            inputBox.Controls.Add(textBox);
+
+            Button okButton = new Button();
+            okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+            okButton.Name = "okButton";
+            okButton.Size = new System.Drawing.Size(75, 23);
+            okButton.Text = "&OK";
+            okButton.Location = new System.Drawing.Point(size.Width - 80 - 80, 39);
+            inputBox.Controls.Add(okButton);
+
+            Button cancelButton = new Button();
+            cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            cancelButton.Name = "cancelButton";
+            cancelButton.Size = new System.Drawing.Size(75, 23);
+            cancelButton.Text = "&Cancel";
+            cancelButton.Location = new System.Drawing.Point(size.Width - 80, 39);
+            inputBox.Controls.Add(cancelButton);
+
+            inputBox.AcceptButton = okButton;
+            inputBox.CancelButton = cancelButton;
+
+            DialogResult result = inputBox.ShowDialog();
+            value = textBox.Text;
+            return result;
+        }
     }
 }

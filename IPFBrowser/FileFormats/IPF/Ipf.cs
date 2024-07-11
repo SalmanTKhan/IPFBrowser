@@ -65,7 +65,7 @@ namespace IPFBrowser.FileFormats.IPF
             this.Footer.PatchVersion = _br.ReadUInt32();
 			this.Footer.NewVersion = _br.ReadUInt32();
 
-			_stream.Position = this.Footer.FileTableOffset;
+            _stream.Position = this.Footer.FileTableOffset;
 
 			this.Files = new List<IpfFile>();
 			for (int i = 0; i < this.Footer.FileCount; i++)

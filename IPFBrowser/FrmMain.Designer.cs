@@ -240,6 +240,7 @@
             this.LblVersion.Name = "LblVersion";
             this.LblVersion.Size = new System.Drawing.Size(118, 19);
             this.LblVersion.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.LblVersion.Click += new System.EventHandler(this.LblVersion_Click);
             // 
             // LblFileName
             // 
