@@ -111,6 +111,7 @@
             this.TreeFolders.Size = new System.Drawing.Size(250, 535);
             this.TreeFolders.TabIndex = 0;
             this.TreeFolders.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.TreeFolders_AfterSelect);
+            this.TreeFolders.KeyDown += new System.Windows.Forms.KeyEventHandler(this.TreeFolders_KeyDown);
             // 
             // imageList1
             // 

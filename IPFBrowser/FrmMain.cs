@@ -169,6 +169,11 @@ namespace IPFBrowser
 		/// <param name="filePath"></param>
 		private void Open(string filePath)
 		{
+			if (_openedIpf != null)
+			{
+				_openedIpf.Close();
+            }
+
 			if (Path.GetExtension(filePath) == ".ies")
 			{
 				this.ResetPreview();
@@ -300,7 +305,7 @@ namespace IPFBrowser
 						{
 							node = treeView.Nodes.Add(subPathAgg, subPath);
 							insertedPaths.Add(subPathAgg, node);
-						}
+                        }
 						else
 						{
 							node = node.Nodes.Add(subPathAgg, subPath);
@@ -374,10 +379,64 @@ namespace IPFBrowser
 			LstFiles.EndUpdate();
 		}
 
-		/// <summary>
-		/// Shows preview for selected file.
-		/// </summary>
-		private void Preview()
+        /// <summary>
+        /// Key Pressed on TreeFolders pane, used for deleting folders
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void TreeFolders_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Delete)
+            {
+                if (TreeFolders.SelectedNode == null)
+                    return;
+
+                ResetPreview();
+
+                DeleteFolder(TreeFolders.SelectedNode);
+            }
+        }
+
+
+        /// <summary>
+        /// Attempt to delete a folder, its associated subfolders, and files
+        /// </summary>
+        /// <param name="path"></param>
+        private void DeleteFolder(TreeNode folder)
+        {
+			TreeNode[] toRemove = new TreeNode[folder.Nodes.Count];
+            folder.Nodes.CopyTo(toRemove, 0);
+
+            foreach (TreeNode subfolder in toRemove) 
+			{
+				DeleteFolder(subfolder);
+            }
+
+            // now remove the files
+
+            var path = folder.FullPath.Replace('\\', '/') + '/';
+
+			if (_folders.TryGetValue(path, out var files))
+			{
+				foreach (var file in files)
+				{
+					if (_files.TryGetValue(file, out var ipfFile))
+					{
+						_openedIpf.Files.Remove(ipfFile);
+					}
+					_files.Remove(file);
+				}
+			}
+
+			_folders.Remove(path);
+			TreeFolders.Nodes.Remove(folder);
+        }
+
+
+        /// <summary>
+        /// Shows preview for selected file.
+        /// </summary>
+        private void Preview()
 		{
             if (LstFiles.SelectedIndices.Count == 0)
 				return;			
