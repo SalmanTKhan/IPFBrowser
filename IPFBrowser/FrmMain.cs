@@ -1184,21 +1184,22 @@ namespace IPFBrowser
                 return;
             }
                 
-            var folderPath = TreeFolders.SelectedNode.FullPath.Replace('\\', '/') + '/';
-			var newFilename = folderPath + Path.GetFileName(files[0]);
+            var folderPath = TreeFolders.SelectedNode.FullPath.Replace('\\', '/') + "/";
+			var newFilename = Path.GetFileName(files[0]);
+			var fullFileName = folderPath + newFilename;
 
-			if (_files.Keys.Contains(newFilename))
+            if (_files.Keys.Contains(fullFileName))
 			{
-				var isPreviewedFile = BtnPreview.Checked && openIpfFile != null && _files[newFilename] == openIpfFile;
+				var isPreviewedFile = BtnPreview.Checked && openIpfFile != null && _files[fullFileName] == openIpfFile;
 
                 if (isPreviewedFile)
                     ResetPreview();
 
-                _files[newFilename].isModified = true;
-				_files[newFilename].content = File.ReadAllBytes(files[0]);
+                _files[fullFileName].isModified = true;
+				_files[fullFileName].content = File.ReadAllBytes(files[0]);
 				foreach (ListViewItem item in LstFiles.Items)
 				{
-					if ((string)item.Tag == newFilename)
+					if ((string)item.Tag == fullFileName)
 					{
 						item.ForeColor = Color.Blue;
 					}
@@ -1211,20 +1212,22 @@ namespace IPFBrowser
             }
 
             IpfFile newFile = new IpfFile(_openedIpf);
-            newFile.FullPath = newFilename;
+			newFile.Path = newFilename;
+            newFile.PackFileName = folderPath;
+			newFile.FullPath = fullFileName;
             newFile.isModified = true;
             newFile.content = File.ReadAllBytes(files[0]);
 
             if (_folders.TryGetValue(folderPath, out var paths))
             {
-				paths.Add(newFilename);
+				paths.Add(fullFileName);
             }
-            _files.Add(newFilename, newFile);
+            _files.Add(fullFileName, newFile);
             _openedIpf.Files.Add(newFile);
 
-            var lvi = LstFiles.Items.Add(Path.GetFileName(files[0]));
+            var lvi = LstFiles.Items.Add(newFilename);
 
-            lvi.Tag = newFilename;
+            lvi.Tag = fullFileName;
             lvi.ForeColor = Color.Blue;
             lvi.ImageKey = fileType.Icon;
         }
