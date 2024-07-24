@@ -98,86 +98,101 @@ namespace IPFBrowser.FileFormats.IPF
 				File.Delete(tempPath);
 			}
 
-            var outputStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-            var bw = new BinaryWriter(outputStream);
-			uint currentPosition = 0;
-
-			foreach (var file in this.Files )
+			try
 			{
-				if (!file.isModified)
-				{                    
-					bw.Write(ReadData(file.Offset, (int)file.SizeCompressed));
-					bw.Flush();
+                var outputStream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+                var bw = new BinaryWriter(outputStream);
 
-					// update the offset for use in writing the file table later, nothing else needs to be changed
-					file.Offset = currentPosition;
-					currentPosition += file.SizeCompressed;
+                uint currentPosition = 0;
+
+                foreach (var file in this.Files)
+                {
+                    if (!file.isModified)
+                    {
+                        bw.Write(ReadData(file.Offset, (int)file.SizeCompressed));
+                        bw.Flush();
+
+                        // update the offset for use in writing the file table later, nothing else needs to be changed
+                        file.Offset = currentPosition;
+                        currentPosition += file.SizeCompressed;
+                    }
+                    else
+                    {
+                        file.SizeUncompressed = (uint)file.GetData().Length;
+
+                        var compressedData = file.Compress();
+                        file.SizeCompressed = (uint)compressedData.Length;
+                        file.Checksum = CRC32.crc32(0, compressedData);
+
+                        bw.Write(compressedData);
+                        bw.Flush();
+
+                        file.Offset = currentPosition;
+                        currentPosition += file.SizeCompressed;
+                    }
                 }
-				else
-				{
-                    file.SizeUncompressed = (uint)file.GetData().Length;
 
-                    var compressedData = file.Compress();                    
-                    file.SizeCompressed = (uint)compressedData.Length;
-                    file.Checksum = CRC32.crc32(0, compressedData);
+                IpfFooter newFooter = new IpfFooter();
+                newFooter.FileCount = (ushort)this.Files.Count;
+                newFooter.FileTableOffset = currentPosition;
+                newFooter.Val1 = this.Footer.Val1;
+                newFooter.Val2 = this.Footer.Val2;
+                newFooter.Compression = this.Footer.Compression;
+                newFooter.PatchVersion = this.Footer.PatchVersion;
+                newFooter.NewVersion = this.Footer.NewVersion;
 
-					bw.Write(compressedData);
+                // Now we write the file table
+
+                foreach (var file in this.Files)
+                {
+                    bw.Write((ushort)file.Path.Length);
+                    bw.Write((uint)file.Checksum);
+                    bw.Write((uint)file.SizeCompressed);
+                    bw.Write((uint)file.SizeUncompressed);
+                    bw.Write((uint)file.Offset);
+                    bw.Write((ushort)file.PackFileName.Length);
+                    bw.WriteFixedString(file.PackFileName, file.PackFileName.Length);
+                    bw.WriteFixedString(file.Path, file.Path.Length);
                     bw.Flush();
-
-                    file.Offset = currentPosition;
-                    currentPosition += file.SizeCompressed;
                 }
-            }
 
-			IpfFooter newFooter = new IpfFooter();
-			newFooter.FileCount = (ushort)this.Files.Count;
-			newFooter.FileTableOffset = currentPosition;
-			newFooter.Val1 = this.Footer.Val1;
-            newFooter.Val2 = this.Footer.Val2;
-            newFooter.Compression = this.Footer.Compression;
-            newFooter.PatchVersion = this.Footer.PatchVersion;
-            newFooter.NewVersion = this.Footer.NewVersion;
+                // Finally we write the footer
 
-			// Now we write the file table
-
-			foreach (var file in this.Files)
-			{
-				bw.Write((ushort)file.Path.Length);
-				bw.Write((uint)file.Checksum);
-                bw.Write((uint)file.SizeCompressed);
-                bw.Write((uint)file.SizeUncompressed);
-                bw.Write((uint)file.Offset);
-				bw.Write((ushort)file.PackFileName.Length);
-                bw.WriteFixedString(file.PackFileName, file.PackFileName.Length);
-				bw.WriteFixedString(file.Path, file.Path.Length);
+                bw.Write((ushort)newFooter.FileCount);
+                bw.Write((uint)newFooter.FileTableOffset);
+                bw.Write((ushort)newFooter.Val1);
+                bw.Write((uint)newFooter.Val2);
+                bw.Write((uint)newFooter.Compression);
+                bw.Write((uint)newFooter.PatchVersion);
+                bw.Write((uint)newFooter.NewVersion);
                 bw.Flush();
+                bw.Close();
+
+                if (filePath == this.FilePath)
+                {
+                    // Overwriting the open file, have to reopen the file
+                    _br.Close();
+                    _stream.Close();
+                }
+
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+                File.Move(tempPath, filePath);
+
+                return filePath == this.FilePath;
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show("Cannot save to this file.  This file may be open in another application.");
+            }
+            catch (Exception ex) 
+            {
+                MessageBox.Show("Unable to save the file");
             }
 
-			// Finally we write the footer
-
-			bw.Write((ushort)newFooter.FileCount);
-            bw.Write((uint)newFooter.FileTableOffset);
-            bw.Write((ushort)newFooter.Val1);
-            bw.Write((uint)newFooter.Val2);
-            bw.Write((uint)newFooter.Compression);
-			bw.Write((uint)newFooter.PatchVersion);
-			bw.Write((uint)newFooter.NewVersion);
-			bw.Flush();
-			bw.Close();
-
-			if (filePath == this.FilePath)
-			{
-				// Overwriting the open file, have to reopen the file
-				_br.Close();
-				_stream.Close();
-			}
-
-			if (File.Exists(filePath)) {
-				File.Delete(filePath);
-			}
-			File.Move(tempPath, filePath);
-
-			return filePath == this.FilePath;
+            return false;
         }
 
 		public byte[] ReadData(long offset, int length)
