@@ -192,6 +192,11 @@ namespace IPFBrowser.FileFormats.IPF
                 MessageBox.Show("Unable to save the file");
             }
 
+            if (File.Exists(tempPath))
+            {
+                File.Delete(tempPath);
+            }
+
             return false;
         }
 
