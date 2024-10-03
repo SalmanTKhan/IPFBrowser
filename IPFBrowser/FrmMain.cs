@@ -43,9 +43,9 @@ namespace IPFBrowser
 
 		private Dictionary<string, FileFormat> _fileTypes = new Dictionary<string, FileFormat>();
 
-        private IpfFile openIpfFile;
+		private IpfFile openIpfFile;
 		private bool openTextFile;
-        private IesFile openIesFile;		
+		private IesFile openIesFile;
 
 		/// <summary>
 		/// Initializes form.
@@ -90,8 +90,8 @@ namespace IPFBrowser
 			// Disable extract / save buttons by default
 			BtnMenuSave.Enabled = false;
 			BtnExtractPack.Enabled = false;
-            BtnExtractFile.Enabled = false;
-            BtnSavePack.Enabled = false;
+			BtnExtractFile.Enabled = false;
+			BtnSavePack.Enabled = false;
 
 			// Hide empty lists
 			SplMain.Visible = false;
@@ -172,7 +172,7 @@ namespace IPFBrowser
 			if (_openedIpf != null)
 			{
 				_openedIpf.Close();
-            }
+			}
 
 			if (Path.GetExtension(filePath) == ".ies")
 			{
@@ -259,11 +259,11 @@ namespace IPFBrowser
 				TreeFolders.SelectedNode.Toggle();
 			}
 
-            // Show lists and enabled pack extract button
-            BtnMenuSave.Enabled = true;
-            BtnExtractPack.Enabled = true;
-            BtnSavePack.Enabled = true;
-            SplMain.Visible = true;
+			// Show lists and enabled pack extract button
+			BtnMenuSave.Enabled = true;
+			BtnExtractPack.Enabled = true;
+			BtnSavePack.Enabled = true;
+			SplMain.Visible = true;
 		}
 
 		/// <summary>
@@ -305,7 +305,7 @@ namespace IPFBrowser
 						{
 							node = treeView.Nodes.Add(subPathAgg, subPath);
 							insertedPaths.Add(subPathAgg, node);
-                        }
+						}
 						else
 						{
 							node = node.Nodes.Add(subPathAgg, subPath);
@@ -332,25 +332,25 @@ namespace IPFBrowser
 				return;
 			}
 
-            BtnExtractFile.Enabled = true;
+			BtnExtractFile.Enabled = true;
 
 			if (BtnPreview.Checked)
 				Preview();
 		}
 
 
-        /// <summary>
-        /// Called when selected a node in the tree view,
-        /// lists files in node's folder in file list.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void TreeFolders_AfterSelect(object sender, TreeViewEventArgs e)
+		/// <summary>
+		/// Called when selected a node in the tree view,
+		/// lists files in node's folder in file list.
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void TreeFolders_AfterSelect(object sender, TreeViewEventArgs e)
 		{
 			var path = e.Node.FullPath.Replace('\\', '/') + '/';
 
-            ResetPreview();
-            LstFiles.BeginUpdate();
+			ResetPreview();
+			LstFiles.BeginUpdate();
 			LstFiles.Items.Clear();
 
 			List<string> paths;
@@ -363,9 +363,9 @@ namespace IPFBrowser
 
 					var lvi = LstFiles.Items.Add(fileName);
 					//lvi.SubItems.Add("0 Byte");
-					
-                    lvi.Tag = filePath;
-                    if (_files.TryGetValue(filePath, out var ipfFile) && ipfFile.isModified)
+
+					lvi.Tag = filePath;
+					if (_files.TryGetValue(filePath, out var ipfFile) && ipfFile.IsModified)
 						lvi.ForeColor = Color.Blue;
 
 					FileFormat fileType;
@@ -379,42 +379,42 @@ namespace IPFBrowser
 			LstFiles.EndUpdate();
 		}
 
-        /// <summary>
-        /// Key Pressed on TreeFolders pane, used for deleting folders
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void TreeFolders_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Delete)
-            {
-                if (TreeFolders.SelectedNode == null)
-                    return;
+		/// <summary>
+		/// Key Pressed on TreeFolders pane, used for deleting folders
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void TreeFolders_KeyDown(object sender, KeyEventArgs e)
+		{
+			if (e.KeyCode == Keys.Delete)
+			{
+				if (TreeFolders.SelectedNode == null)
+					return;
 
-                ResetPreview();
+				ResetPreview();
 
-                DeleteFolder(TreeFolders.SelectedNode);
-            }
-        }
+				DeleteFolder(TreeFolders.SelectedNode);
+			}
+		}
 
 
-        /// <summary>
-        /// Attempt to delete a folder, its associated subfolders, and files
-        /// </summary>
-        /// <param name="path"></param>
-        private void DeleteFolder(TreeNode folder)
-        {
+		/// <summary>
+		/// Attempt to delete a folder, its associated subfolders, and files
+		/// </summary>
+		/// <param name="path"></param>
+		private void DeleteFolder(TreeNode folder)
+		{
 			TreeNode[] toRemove = new TreeNode[folder.Nodes.Count];
-            folder.Nodes.CopyTo(toRemove, 0);
+			folder.Nodes.CopyTo(toRemove, 0);
 
-            foreach (TreeNode subfolder in toRemove) 
+			foreach (TreeNode subfolder in toRemove)
 			{
 				DeleteFolder(subfolder);
-            }
+			}
 
-            // now remove the files
+			// now remove the files
 
-            var path = folder.FullPath.Replace('\\', '/') + '/';
+			var path = folder.FullPath.Replace('\\', '/') + '/';
 
 			if (_folders.TryGetValue(path, out var files))
 			{
@@ -430,22 +430,24 @@ namespace IPFBrowser
 
 			_folders.Remove(path);
 			TreeFolders.Nodes.Remove(folder);
-        }
+		}
 
 
-        /// <summary>
-        /// Shows preview for selected file.
-        /// </summary>
-        private void Preview()
+		/// <summary>
+		/// Shows preview for selected file.
+		/// </summary>
+		private void Preview()
 		{
-            if (LstFiles.SelectedIndices.Count == 0)
-				return;			
+			if (LstFiles.SelectedIndices.Count == 0)
+				return;
 
 			var selected = LstFiles.SelectedItems[0];
 			var fileName = (string)selected.Tag;
 			var ipfFile = _files[fileName];
 			var ext = Path.GetExtension(fileName).ToLowerInvariant();
-			
+
+			openIpfFile = ipfFile;
+
 			openIpfFile = ipfFile;
 
 			var previewType = PreviewType.None;
@@ -565,7 +567,7 @@ namespace IPFBrowser
 
 									row.Tag = "" + index++;
 
-                                    GridPreview.Rows.Add(row);
+									GridPreview.Rows.Add(row);
 								}
 
 								GridPreview.ResumeDrawing();
@@ -663,7 +665,7 @@ namespace IPFBrowser
 		private void BtnExit_Click(object sender, EventArgs e)
 		{
 			Close();
-        }
+		}
 
 		/// <summary>
 		/// Sets lexer and styles for text preview.
@@ -754,12 +756,12 @@ namespace IPFBrowser
 		/// </summary>
 		private void ResetPreview()
 		{
-            if (openIpfFile != null && openIpfFile.isModified)
+			if (openIpfFile != null && openIpfFile.IsModified)
 				SaveIpfFile();
 
 			openTextFile = false;
 			openIesFile = null;
-            TxtPreview.Visible = false;
+			TxtPreview.Visible = false;
 			TxtPreview.Text = "";
 
 			PnlImagePreview.Visible = false;
@@ -826,17 +828,17 @@ namespace IPFBrowser
 		}
 
 
-        /// <summary>
-        /// Called when clicking Extract Client button, extracts selected
-        /// TOS client to selected destination.
-        /// </summary>
-        /// <remarks>
-        /// Loads data first, followed by patch, to get the latest version
-        /// of all files found.
-        /// </remarks>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BtnExtractClient_Click(object sender, EventArgs e)
+		/// <summary>
+		/// Called when clicking Extract Client button, extracts selected
+		/// TOS client to selected destination.
+		/// </summary>
+		/// <remarks>
+		/// Loads data first, followed by patch, to get the latest version
+		/// of all files found.
+		/// </remarks>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void BtnExtractClient_Click(object sender, EventArgs e)
 		{
 			FbdExtractPack.Description = "Select TOS folder.";
 			FbdExtractPack.ShowNewFolderButton = false;
@@ -963,72 +965,73 @@ namespace IPFBrowser
 			frmProgress.ShowDialog();
 		}
 
-        /// <summary>
-        /// Value changed for Text Preview
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void TxtPreview_TextChanged(object sender, System.EventArgs e)
-        {
-			if (openTextFile) { 
-				openIpfFile.isModified = true;
+		/// <summary>
+		/// Value changed for Text Preview
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void TxtPreview_TextChanged(object sender, System.EventArgs e)
+		{
+			if (openTextFile)
+			{
+				openIpfFile.IsModified = true;
 				LstFiles.SelectedItems[0].ForeColor = Color.Blue;
-            }
-        }
+			}
+		}
 
 
-        /// <summary>
-        /// Value changed for Grid Preview
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void GridPreview_ValueChanged(object sender, DataGridViewCellEventArgs e)
-        {
+		/// <summary>
+		/// Value changed for Grid Preview
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void GridPreview_ValueChanged(object sender, DataGridViewCellEventArgs e)
+		{
 			if (openIesFile == null)
 				return;
 			var newValue = (string)GridPreview[e.ColumnIndex, e.RowIndex].Value;
 			if (e.RowIndex >= openIesFile.Rows.Count)
 				GridPreview_AddRow();
-            var editedRow = openIesFile.Rows[e.RowIndex];
+			var editedRow = openIesFile.Rows[e.RowIndex];
 			var editedCol = openIesFile.Columns[e.ColumnIndex];
 			if (editedCol.IsNumber)
 			{
 				var newFloat = 0f;
 				if (float.TryParse(newValue, out newFloat))
 				{
-                    editedRow[editedCol.Name] = float.Parse(newValue);
-                }
+					editedRow[editedCol.Name] = float.Parse(newValue);
+				}
 				else
 				{
 					MessageBox.Show("Value must be numeric");
 					GridPreview[e.ColumnIndex, e.RowIndex].Value = editedRow[editedCol.Name].ToString();
-                }
+				}
 			}
 			else
 			{
-                editedRow[editedCol.Name] = newValue;
-            }
+				editedRow[editedCol.Name] = newValue;
+			}
 
-            openIpfFile.isModified = true;
+			openIpfFile.IsModified = true;
 			LstFiles.SelectedItems[0].ForeColor = Color.Blue;
-        }
+		}
 
 
-        /// <summary>
-        /// Inserting a row in Grid Preview
+		/// <summary>
+		/// Inserting a row in Grid Preview
 		/// This is done by right clicking the row header above where you want to insert, which is
 		/// not ideal, this can probably be moved to a proper context menu eventually
-        /// </summary>
-        private void GridPreview_InsertRow(object sender, DataGridViewCellMouseEventArgs e)
-        {
-            if (e.Button != MouseButtons.Right)
+		/// </summary>
+		private void GridPreview_InsertRow(object sender, DataGridViewCellMouseEventArgs e)
+		{
+			if (e.Button != MouseButtons.Right)
 				return;
 
-            var afterRow = e.RowIndex;
+			var afterRow = e.RowIndex;
 			if (afterRow > openIesFile.Rows.Count)
 				return;
 
-            GridPreview.Rows.Insert(afterRow + 1, 1);
+			GridPreview.Rows.Insert(afterRow + 1, 1);
 
 			// Some files have auto-generated classnames rather than having them in the file
 			// Need to shift these down to avoid duplicates
@@ -1037,85 +1040,85 @@ namespace IPFBrowser
 			{
 				openIesFile.Rows[i].ClassId++;
 				openIesFile.Rows[i].ClassName = "ClassName" + openIesFile.Rows[i].ClassId;
-            }
+			}
 
-            var newRow = new IesRow();
-            newRow.ClassId = openIesFile.Rows[afterRow].ClassId + 1;
-            newRow.ClassName = "ClassName" + newRow.ClassId;
+			var newRow = new IesRow();
+			newRow.ClassId = openIesFile.Rows[afterRow].ClassId + 1;
+			newRow.ClassName = "ClassName" + newRow.ClassId;
 
-            openIesFile.Rows.Insert(afterRow + 1, newRow);
+			openIesFile.Rows.Insert(afterRow + 1, newRow);
 
-            openIpfFile.isModified = true;
-            LstFiles.SelectedItems[0].ForeColor = Color.Blue;
-        }
+			openIpfFile.IsModified = true;
+			LstFiles.SelectedItems[0].ForeColor = Color.Blue;
+		}
 
 
-        /// <summary>
-        /// Added a row in Grid Preview
-        /// </summary>
-        private void GridPreview_AddRow()
-        {
+		/// <summary>
+		/// Added a row in Grid Preview
+		/// </summary>
+		private void GridPreview_AddRow()
+		{
 			var newRow = new IesRow();
 			newRow.ClassId = openIesFile.Rows[openIesFile.Rows.Count - 1].ClassId + 1;
 			newRow.ClassName = "ClassName" + newRow.ClassId;
 
-            openIesFile.Rows.Add(newRow);
+			openIesFile.Rows.Add(newRow);
 
-            openIpfFile.isModified = true;
-            LstFiles.SelectedItems[0].ForeColor = Color.Blue;
-        }
+			openIpfFile.IsModified = true;
+			LstFiles.SelectedItems[0].ForeColor = Color.Blue;
+		}
 
 
-        /// <summary>
-        /// Deleted a row in Grid Preview
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void GridPreview_DeleteRow(object sender, DataGridViewRowEventArgs e)
-        {
-            if (openIesFile == null)
-                return;
+		/// <summary>
+		/// Deleted a row in Grid Preview
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void GridPreview_DeleteRow(object sender, DataGridViewRowEventArgs e)
+		{
+			if (openIesFile == null)
+				return;
 
 			int deletedIndex = int.Parse((string)e.Row.Tag);
 
 			openIesFile.Rows.RemoveAt(deletedIndex);
 
-            openIpfFile.isModified = true;
-            LstFiles.SelectedItems[0].ForeColor = Color.Blue;
-        }
+			openIpfFile.IsModified = true;
+			LstFiles.SelectedItems[0].ForeColor = Color.Blue;
+		}
 
 
-        /// <summary>
-        /// Saves changes to an IPF file
-        /// </summary>
-        private void SaveIpfFile()
+		/// <summary>
+		/// Saves changes to an IPF file
+		/// </summary>
+		private void SaveIpfFile()
 		{
 			if (openIesFile != null)
-            {
-				openIpfFile.content = openIesFile.ToBytes();
-                return;
+			{
+				openIpfFile.Content = openIesFile.ToBytes();
+				return;
 			}
 
 			if (openTextFile)
-			{			
+			{
 				int byteCount = Encoding.UTF8.GetByteCount(TxtPreview.Text.ToCharArray(), 0, TxtPreview.TextLength);
-				openIpfFile.content = new byte[byteCount];
-				Encoding.UTF8.GetEncoder().GetBytes(TxtPreview.Text.ToCharArray(), 0, TxtPreview.TextLength, openIpfFile.content, 0, true);
-            }
-        }
+				openIpfFile.Content = new byte[byteCount];
+				Encoding.UTF8.GetEncoder().GetBytes(TxtPreview.Text.ToCharArray(), 0, TxtPreview.TextLength, openIpfFile.Content, 0, true);
+			}
+		}
 
 
-        /// <summary>
-        /// Key Pressed on LstFiles window, used for deleting files
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void LstFiles_KeyDown(object sender, KeyEventArgs e)
-        {
+		/// <summary>
+		/// Key Pressed on LstFiles window, used for deleting files
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void LstFiles_KeyDown(object sender, KeyEventArgs e)
+		{
 			if (e.KeyCode == Keys.Delete)
 			{
-                if (LstFiles.SelectedIndices.Count == 0)
-                    return;
+				if (LstFiles.SelectedIndices.Count == 0)
+					return;
 
 				foreach (ListViewItem file in LstFiles.SelectedItems)
 				{
@@ -1133,42 +1136,42 @@ namespace IPFBrowser
 					LstFiles.Items.Remove(file);
 				}
 
-                openIpfFile = null;
+				openIpfFile = null;
 				ResetPreview();
-            }
-        }
+			}
+		}
 
 
-        /// <summary>
-        /// Drag Enter method for the LstFiles window
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void LstFiles_DragEnter(object sender, DragEventArgs e)
-        {
+		/// <summary>
+		/// Drag Enter method for the LstFiles window
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void LstFiles_DragEnter(object sender, DragEventArgs e)
+		{
 			if (TreeFolders.SelectedNode == null) return;
 
 			if (!e.Data.GetDataPresent(DataFormats.FileDrop))
 				return;
-			
+
 			e.Effect = DragDropEffects.Copy;
-        }
+		}
 
 
-        /// <summary>
-        /// Called when dropping a file in the LstFiles window
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void LstFiles_DropFile(object sender, DragEventArgs e)
-        {
-            if (TreeFolders.SelectedNode == null) 
+		/// <summary>
+		/// Called when dropping a file in the LstFiles window
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void LstFiles_DropFile(object sender, DragEventArgs e)
+		{
+			if (TreeFolders.SelectedNode == null)
 				return;
 
-            if (!e.Data.GetDataPresent(DataFormats.FileDrop))
+			if (!e.Data.GetDataPresent(DataFormats.FileDrop))
 				return;
 
-            string[] files = (string[]) e.Data.GetData(DataFormats.FileDrop);
+			string[] files = (string[])e.Data.GetData(DataFormats.FileDrop);
 			if (files.Length > 1)
 			{
 				MessageBox.Show("Please drop only one file at a time");
@@ -1176,27 +1179,27 @@ namespace IPFBrowser
 			}
 
 			var ext = Path.GetExtension(files[0]);
-            
+
 			FileFormat fileType;
-            if (!_fileTypes.TryGetValue(ext, out fileType))
+			if (!_fileTypes.TryGetValue(ext, out fileType))
 			{
-                MessageBox.Show("Can't add this type of file");
-                return;
-            }
-                
-            var folderPath = TreeFolders.SelectedNode.FullPath.Replace('\\', '/') + "/";
+				MessageBox.Show("Can't add this type of file");
+				return;
+			}
+
+			var folderPath = TreeFolders.SelectedNode.FullPath.Replace('\\', '/') + "/";
 			var newFilename = Path.GetFileName(files[0]);
 			var fullFileName = folderPath + newFilename;
 
-            if (_files.Keys.Contains(fullFileName))
+			if (_files.Keys.Contains(fullFileName))
 			{
 				var isPreviewedFile = BtnPreview.Checked && openIpfFile != null && _files[fullFileName] == openIpfFile;
 
-                if (isPreviewedFile)
-                    ResetPreview();
+				if (isPreviewedFile)
+					ResetPreview();
 
-                _files[fullFileName].isModified = true;
-				_files[fullFileName].content = File.ReadAllBytes(files[0]);
+				_files[fullFileName].IsModified = true;
+				_files[fullFileName].Content = File.ReadAllBytes(files[0]);
 				foreach (ListViewItem item in LstFiles.Items)
 				{
 					if ((string)item.Tag == fullFileName)
@@ -1208,61 +1211,60 @@ namespace IPFBrowser
 				if (isPreviewedFile)
 					Preview();
 
-                return;
-            }
+				return;
+			}
 
-            IpfFile newFile = new IpfFile(_openedIpf);
+			IpfFile newFile = new IpfFile(_openedIpf, true);
 			newFile.Path = newFilename;
-            newFile.PackFileName = folderPath;
+			newFile.PackFileName = folderPath;
 			newFile.FullPath = fullFileName;
-            newFile.isModified = true;
-            newFile.content = File.ReadAllBytes(files[0]);
+			newFile.Content = File.ReadAllBytes(files[0]);
 
-            if (_folders.TryGetValue(folderPath, out var paths))
-            {
+			if (_folders.TryGetValue(folderPath, out var paths))
+			{
 				paths.Add(fullFileName);
-            }
-            _files.Add(fullFileName, newFile);
-            _openedIpf.Files.Add(newFile);
+			}
+			_files.Add(fullFileName, newFile);
+			_openedIpf.Files.Add(newFile);
 
-            var lvi = LstFiles.Items.Add(newFilename);
+			var lvi = LstFiles.Items.Add(newFilename);
 
-            lvi.Tag = fullFileName;
-            lvi.ForeColor = Color.Blue;
-            lvi.ImageKey = fileType.Icon;
-        }
+			lvi.Tag = fullFileName;
+			lvi.ForeColor = Color.Blue;
+			lvi.ImageKey = fileType.Icon;
+		}
 
 
-        /// <summary>
-        /// Called when clicking Save, shows save dialog and saves the IPF file
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void BtnSave_Click(object sender, EventArgs e)
-        {
-            if (openIpfFile != null && openIpfFile.isModified)
-                SaveIpfFile();
+		/// <summary>
+		/// Called when clicking Save, shows save dialog and saves the IPF file
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void BtnSave_Click(object sender, EventArgs e)
+		{
+			if (openIpfFile != null && openIpfFile.IsModified)
+				SaveIpfFile();
 
-            if (SfdIpfFile.ShowDialog() != DialogResult.OK)
-                return;
+			if (SfdIpfFile.ShowDialog() != DialogResult.OK)
+				return;
 
-            var filePath = SfdIpfFile.FileName;
-            var reopenRequired = _openedIpf.Save(filePath);
+			var filePath = SfdIpfFile.FileName;
+			var reopenRequired = _openedIpf.Save(filePath);
 
 			if (reopenRequired)
 			{
 				Open(filePath);
-            }
-        }
+			}
+		}
 
 
-        /// <summary>
-        /// Called when the version label is clicked, lets you change the version
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void LblVersion_Click(object sender, EventArgs e)
-        {
+		/// <summary>
+		/// Called when the version label is clicked, lets you change the version
+		/// </summary>
+		/// <param name="sender"></param>
+		/// <param name="e"></param>
+		private void LblVersion_Click(object sender, EventArgs e)
+		{
 			string newVersion = "" + _openedIpf.Footer.NewVersion;
 			if (ShowInputDialog("New Version", ref newVersion) == DialogResult.OK)
 			{
@@ -1276,48 +1278,48 @@ namespace IPFBrowser
 					MessageBox.Show("Value must be numeric");
 				}
 			}
-        }
+		}
 
 
-        private static DialogResult ShowInputDialog(string title, ref string value)
-        {
-            System.Drawing.Size size = new System.Drawing.Size(200, 70);
-            Form inputBox = new Form();
+		private static DialogResult ShowInputDialog(string title, ref string value)
+		{
+			System.Drawing.Size size = new System.Drawing.Size(200, 70);
+			Form inputBox = new Form();
 
-            inputBox.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
-            inputBox.ShowInTaskbar = false;
-            inputBox.StartPosition = FormStartPosition.CenterParent;
-            inputBox.ClientSize = size;
-            inputBox.Text = title;
+			inputBox.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
+			inputBox.ShowInTaskbar = false;
+			inputBox.StartPosition = FormStartPosition.CenterParent;
+			inputBox.ClientSize = size;
+			inputBox.Text = title;
 
-            System.Windows.Forms.TextBox textBox = new TextBox();
-            textBox.Size = new System.Drawing.Size(size.Width - 10, 23);
-            textBox.Location = new System.Drawing.Point(5, 5);
-            textBox.Text = value;
-            inputBox.Controls.Add(textBox);
+			System.Windows.Forms.TextBox textBox = new TextBox();
+			textBox.Size = new System.Drawing.Size(size.Width - 10, 23);
+			textBox.Location = new System.Drawing.Point(5, 5);
+			textBox.Text = value;
+			inputBox.Controls.Add(textBox);
 
-            Button okButton = new Button();
-            okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            okButton.Name = "okButton";
-            okButton.Size = new System.Drawing.Size(75, 23);
-            okButton.Text = "&OK";
-            okButton.Location = new System.Drawing.Point(size.Width - 80 - 80, 39);
-            inputBox.Controls.Add(okButton);
+			Button okButton = new Button();
+			okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+			okButton.Name = "okButton";
+			okButton.Size = new System.Drawing.Size(75, 23);
+			okButton.Text = "&OK";
+			okButton.Location = new System.Drawing.Point(size.Width - 80 - 80, 39);
+			inputBox.Controls.Add(okButton);
 
-            Button cancelButton = new Button();
-            cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            cancelButton.Name = "cancelButton";
-            cancelButton.Size = new System.Drawing.Size(75, 23);
-            cancelButton.Text = "&Cancel";
-            cancelButton.Location = new System.Drawing.Point(size.Width - 80, 39);
-            inputBox.Controls.Add(cancelButton);
+			Button cancelButton = new Button();
+			cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+			cancelButton.Name = "cancelButton";
+			cancelButton.Size = new System.Drawing.Size(75, 23);
+			cancelButton.Text = "&Cancel";
+			cancelButton.Location = new System.Drawing.Point(size.Width - 80, 39);
+			inputBox.Controls.Add(cancelButton);
 
-            inputBox.AcceptButton = okButton;
-            inputBox.CancelButton = cancelButton;
+			inputBox.AcceptButton = okButton;
+			inputBox.CancelButton = cancelButton;
 
-            DialogResult result = inputBox.ShowDialog();
-            value = textBox.Text;
-            return result;
-        }
-    }
+			DialogResult result = inputBox.ShowDialog();
+			value = textBox.Text;
+			return result;
+		}
+	}
 }
